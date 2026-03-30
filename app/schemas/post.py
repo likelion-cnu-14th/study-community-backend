@@ -25,6 +25,7 @@ class PostResponse(BaseModel):
 class PostSummary(BaseModel):
     id: str
     title: str
+    content: str
     author: str
     createdAt: datetime
     likes: int

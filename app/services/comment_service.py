@@ -12,10 +12,18 @@ class CommentService:
         self.post_repo = post_repo
         self.comment_repo = comment_repo
 
+    def get_comments(self, post_id: str) -> list[Comment]:
+        post = self.post_repo.find_by_id(post_id)
+        if not post:
+            raise HTTPException(status_code=404, detail={"error": "게시글을 찾을 수 없습니다."})
+        return post.comments
+
     def create_comment(self, post_id: str, data: CommentCreate) -> Comment:
         post = self.post_repo.find_by_id(post_id)
         if not post:
-            raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail={"error": "게시글을 찾을 수 없습니다."})
+        if not data.content:
+            raise HTTPException(status_code=400, detail={"error": "댓글 내용은 필수입니다."})
         comment = Comment(
             id=str(int(datetime.now(timezone.utc).timestamp() * 1000)),
             content=data.content,
@@ -27,5 +35,5 @@ class CommentService:
     def delete_comment(self, comment_id: str) -> None:
         comment = self.comment_repo.find_by_id(comment_id)
         if not comment:
-            raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
+            raise HTTPException(status_code=404, detail={"error": "댓글을 찾을 수 없습니다."})
         self.comment_repo.delete(comment)

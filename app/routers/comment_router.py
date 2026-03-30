@@ -13,6 +13,23 @@ def get_comment_service(db: Session = Depends(get_db)) -> CommentService:
     return CommentService(PostRepository(db), CommentRepository(db))
 
 
+@router.get("/posts/{post_id}/comments", response_model=list[CommentResponse])
+def list_comments(
+    post_id: str,
+    service: CommentService = Depends(get_comment_service),
+):
+    comments = service.get_comments(post_id)
+    return [
+        CommentResponse(
+            id=c.id,
+            content=c.content,
+            author=c.author,
+            createdAt=c.created_at,
+        )
+        for c in comments
+    ]
+
+
 @router.post("/posts/{post_id}/comments", response_model=CommentResponse, status_code=201)
 def create_comment(
     post_id: str,
@@ -28,9 +45,10 @@ def create_comment(
     )
 
 
-@router.delete("/comments/{comment_id}", status_code=204)
+@router.delete("/comments/{comment_id}")
 def delete_comment(
     comment_id: str,
     service: CommentService = Depends(get_comment_service),
 ):
     service.delete_comment(comment_id)
+    return {"message": "댓글이 삭제되었습니다."}

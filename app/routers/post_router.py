@@ -20,6 +20,7 @@ def list_posts(service: PostService = Depends(get_post_service)):
         PostSummary(
             id=p.id,
             title=p.title,
+            content=p.content,
             author=p.author,
             createdAt=p.created_at,
             likes=p.likes,
@@ -60,14 +61,15 @@ def create_post(data: PostCreate, service: PostService = Depends(get_post_servic
     )
 
 
-@router.delete("/{post_id}", status_code=204)
+@router.delete("/{post_id}")
 def delete_post(post_id: str, service: PostService = Depends(get_post_service)):
     service.delete_post(post_id)
+    return {"message": "게시글이 삭제되었습니다."}
 
 
-@router.post("/{post_id}/like", response_model=PostResponse)
+@router.patch("/{post_id}/like", response_model=PostResponse)
 def like_post(post_id: str, service: PostService = Depends(get_post_service)):
-    post = service.like_post(post_id)
+    post = service.toggle_like(post_id)
     return PostResponse(
         id=post.id,
         title=post.title,
