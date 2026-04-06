@@ -1,39 +1,23 @@
-from datetime import datetime, timezone
-
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..models import User
 from ..schemas import UserRegister, UserLogin, UserResponse, TokenResponse
-from ..auth import hash_password, verify_password, create_access_token, get_current_user
+from ..repositories import UserRepository
+from ..services import AuthService
+from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(UserRepository(db))
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
-def register(data: UserRegister, db: Session = Depends(get_db)):
-    if len(data.username) < 2:
-        raise HTTPException(status_code=400, detail="사용자 이름은 2자 이상이어야 합니다.")
-    if len(data.password) < 6:
-        raise HTTPException(status_code=400, detail="비밀번호는 6자 이상이어야 합니다.")
-
-    if db.query(User).filter(User.email == data.email).first():
-        raise HTTPException(status_code=409, detail="이미 사용 중인 이메일입니다.")
-    if db.query(User).filter(User.username == data.username).first():
-        raise HTTPException(status_code=409, detail="이미 사용 중인 사용자 이름입니다.")
-
-    user = User(
-        id=str(int(datetime.now(timezone.utc).timestamp() * 1000)),
-        username=data.username,
-        email=data.email,
-        hashed_password=hash_password(data.password),
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    token = create_access_token(user.id)
+def register(data: UserRegister, service: AuthService = Depends(get_auth_service)):
+    user, token = service.register(data)
     return TokenResponse(
         access_token=token,
         user=UserResponse(id=user.id, username=user.username, email=user.email, createdAt=user.created_at),
@@ -41,12 +25,8 @@ def register(data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == data.email).first()
-    if not user or not verify_password(data.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="이메일 또는 비밀번호가 올바르지 않습니다.")
-
-    token = create_access_token(user.id)
+def login(data: UserLogin, service: AuthService = Depends(get_auth_service)):
+    user, token = service.login(data)
     return TokenResponse(
         access_token=token,
         user=UserResponse(id=user.id, username=user.username, email=user.email, createdAt=user.created_at),
