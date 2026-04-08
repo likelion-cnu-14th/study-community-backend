@@ -55,8 +55,7 @@ def create_post(
     service: PostService = Depends(get_post_service),
     current_user: User = Depends(get_current_user),
 ):
-    data.author = current_user.username
-    post = service.create_post(data)
+    post = service.create_post(data, author=current_user.username)
     return PostResponse(
         id=post.id,
         title=post.title,

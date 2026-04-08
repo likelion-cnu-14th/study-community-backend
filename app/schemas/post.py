@@ -7,7 +7,6 @@ from .comment import CommentResponse
 class PostCreate(BaseModel):
     title: str
     content: str
-    author: str
 
 
 class PostResponse(BaseModel):

@@ -22,14 +22,14 @@ class PostService:
             raise HTTPException(status_code=404, detail={"error": "게시글을 찾을 수 없습니다."})
         return post
 
-    def create_post(self, data: PostCreate) -> Post:
+    def create_post(self, data: PostCreate, author: str) -> Post:
         if not data.title or not data.content:
             raise HTTPException(status_code=400, detail={"error": "제목과 내용은 필수입니다."})
         post = Post(
             id=str(int(datetime.now(timezone.utc).timestamp() * 1000)),
             title=data.title,
             content=data.content,
-            author=data.author,
+            author=author,
         )
         return self.post_repo.save(post)
 
