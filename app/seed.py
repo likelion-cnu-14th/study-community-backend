@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 from .database import SessionLocal
-from .models import Post, Comment
+from .models import Post, Comment, Room
 
 
 def seed_initial_data():
@@ -81,5 +81,37 @@ def seed_initial_data():
                 db.add(comment)
 
         db.commit()
+
+        seed_rooms(db)
     finally:
         db.close()
+
+
+def seed_rooms(db):
+    if db.query(Room).count() > 0:
+        return
+
+    rooms = [
+        Room(
+            id="room_1", name="스터디룸 A", location="3층 301호", capacity=4,
+            description="4인용 소규모 스터디룸",
+            amenities=["화이트보드", "모니터", "Wi-Fi"],
+        ),
+        Room(
+            id="room_2", name="스터디룸 B", location="3층 302호", capacity=8,
+            description="8인용 중규모 스터디룸",
+            amenities=["화이트보드", "프로젝터", "Wi-Fi"],
+        ),
+        Room(
+            id="room_3", name="스터디룸 C", location="4층 401호", capacity=6,
+            description="6인용 스터디룸 (조용한 구역)",
+            amenities=["화이트보드", "Wi-Fi"],
+        ),
+        Room(
+            id="room_4", name="대회의실", location="5층 501호", capacity=20,
+            description="20인용 대회의실",
+            amenities=["프로젝터", "마이크", "스피커", "Wi-Fi"],
+        ),
+    ]
+    db.add_all(rooms)
+    db.commit()
